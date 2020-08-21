@@ -51,6 +51,38 @@ class My_classical_MDS:
         X_transformed = (self.Delta_squareRoot).dot(self.V.T)
         return X_transformed
 
+    def transform_outOfSample(self, X_test):
+        # X_test: rows are features and columns are samples
+        # kernel_X_X = pairwise_kernels(X=self.X.T, Y=self.X.T, metric=self.kernel)
+        kernel_X_Xtest = pairwise_kernels(X=self.X.T, Y=X_test.T, metric=self.kernel)
+        kernel_outOfSample_centered = self.center_kernel_of_outOfSample(kernel_of_outOfSample=kernel_X_Xtest, matrix_or_vector="matrix")
+        n_components = self.V.shape[1]
+        n_test_samples = X_test.shape[1]
+        X_test_transformed = np.zeros((n_components, n_test_samples))
+        for test_sample_index in range(n_test_samples):
+            for dimension_index in range(n_components):
+                v = self.V[:, dimension_index] #--> n-dimensional vector
+                k = kernel_outOfSample_centered[:, test_sample_index] #--> n-dimensional vector
+                eig_values_squareRoot = np.diag(self.Delta_squareRoot)
+                delta_ = eig_values_squareRoot ** 2
+                X_test_transformed[dimension_index, test_sample_index] = (1/(delta_[dimension_index]**0.5)) * (v.T@k)
+        return X_test_transformed
+
+    def center_kernel_of_outOfSample(self, kernel_of_outOfSample, matrix_or_vector="matrix"):
+        n_training_samples = self.X.shape[1]
+        kernel_X_X_training = pairwise_kernels(X=self.X.T, Y=self.X.T, metric=self.kernel)
+        if matrix_or_vector == "matrix":
+            n_outOfSample_samples = kernel_of_outOfSample.shape[1]
+            kernel_of_outOfSample_centered = kernel_of_outOfSample - (1 / n_training_samples) * np.ones((n_training_samples, n_training_samples)).dot(kernel_of_outOfSample) \
+                                             - (1 / n_training_samples) * kernel_X_X_training.dot(np.ones((n_training_samples, n_outOfSample_samples))) \
+                                             + (1 / n_training_samples**2) * np.ones((n_training_samples, n_training_samples)).dot(kernel_X_X_training).dot(np.ones((n_training_samples, n_outOfSample_samples)))
+        elif matrix_or_vector == "vector":
+            kernel_of_outOfSample = kernel_of_outOfSample.reshape((-1, 1))
+            kernel_of_outOfSample_centered = kernel_of_outOfSample - (1 / n_training_samples) * np.ones((n_training_samples, n_training_samples)).dot(kernel_of_outOfSample) \
+                                             - (1 / n_training_samples) * kernel_X_X_training.dot(np.ones((n_training_samples, 1))) \
+                                             + (1 / n_training_samples**2) * np.ones((n_training_samples, n_training_samples)).dot(kernel_X_X_training).dot(np.ones((n_training_samples, 1)))
+        return kernel_of_outOfSample_centered
+
     def center_the_matrix(self, the_matrix, mode="double_center"):
         n_rows = the_matrix.shape[0]
         n_cols = the_matrix.shape[1]
