@@ -142,3 +142,4 @@ class My_Sammon_mapping:
         np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
         with open(file_address, 'w') as f:
             f.write(np.array2string(variable, separator=', '))
+            

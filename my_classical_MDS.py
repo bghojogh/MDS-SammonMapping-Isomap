@@ -97,3 +97,4 @@ class My_classical_MDS:
         elif mode == "remove_mean_of_columns_from_columns":
             the_matrix = the_matrix.dot(H_right)
         return the_matrix
+        

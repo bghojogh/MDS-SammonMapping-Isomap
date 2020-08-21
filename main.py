@@ -194,3 +194,4 @@ def load_image(address_image, image_height, image_width, do_resize=False, scale=
 
 if __name__ == "__main__":
     main()
+    

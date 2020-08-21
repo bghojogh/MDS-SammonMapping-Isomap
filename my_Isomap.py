@@ -99,3 +99,4 @@ class My_Isomap:
                 delta_ = eig_values_squareRoot ** 2
                 X_test_transformed[dimension_index, test_sample_index] = (1/(2 * delta_[dimension_index]**0.5)) * (v.T@k)
         return X_test_transformed
+        

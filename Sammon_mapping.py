@@ -1,6 +1,7 @@
 # taken from: https://github.com/tompollard/sammon
 # example: https://data-farmers.github.io/2019-06-10-sammon-mapping/
 
+
 def sammon(x, n, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, tolfun = 1e-9, init = 'default'):
 
     import numpy as np 

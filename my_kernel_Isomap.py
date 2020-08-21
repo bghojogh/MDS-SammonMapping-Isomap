@@ -118,3 +118,4 @@ class My_kernel_Isomap:
     #         inv_matrix = np.linalg.inv(matrix_)
     #     return inv_matrix
         
+        
