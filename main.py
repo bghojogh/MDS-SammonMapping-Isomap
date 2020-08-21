@@ -18,41 +18,57 @@ def main():
     dataset = "MNIST"  #--> MNIST, ORL_glasses
     method = "MDS" #--> MDS, kernel_MDS, PCA, my_Sammon_mapping, Sammon_mapping, Isomap, kernel_Isomap
     kernel = "cosine"  #--> linear, rbf, sigmoid, polynomial, poly, cosine
-    embed_test_data = False
-    color_map = plt.cm.brg  #--> hsv, brg (good for S curve), rgb, jet, gist_ncar (good for one blob), tab10, Set1, rainbow, Spectral #--> https://matplotlib.org/3.2.1/tutorials/colors/colormaps.html
+    embed_test_data = True
+    embed_again = True
+    color_map = plt.cm.jet  #--> hsv, brg (good for S curve), rgb, jet, gist_ncar (good for one blob), tab10, Set1, rainbow, Spectral #--> https://matplotlib.org/3.2.1/tutorials/colors/colormaps.html
 
     #---- dataset:
     X_train, y_train, X_test, y_test, class_names = read_dataset(dataset=dataset)
 
     #---- embedding:
-    X_test_embedded = None
-    if method == "MDS":
-        my_classical_MDS = My_classical_MDS()
-        X_train_embedded = my_classical_MDS.fit_transform(X=X_train)
-        if embed_test_data:
-            X_test_embedded = my_classical_MDS.transform_outOfSample(X_test=X_test)
-    elif method == "kernel_MDS":
-        my_classical_MDS = My_classical_MDS(kernel=kernel)
-        X_train_embedded = my_classical_MDS.fit_transform(X=X_train)
-    elif method == "PCA":
-        pca = PCA(n_components=2)
-        X_train_embedded = pca.fit_transform(X=X_train.T)
-        X_train_embedded = X_train_embedded.T
-    elif method == "my_Sammon_mapping":
-        my_Sammon_mapping = My_Sammon_mapping(X=X_train, n_components=2, n_neighbors=None, 
-                                            max_iterations=100, learning_rate=0.1, init_type="PCA")
-        X_train_embedded = my_Sammon_mapping.fit_transform(X=X_train)
-    elif method == "Sammon_mapping":
-        [X_train_embedded, E] = sammon(x=X_train.T, n=2, maxiter=500)
-        X_train_embedded = X_train_embedded.T    
-    elif method == "Isomap":
-        my_Isomap = My_Isomap()
-        X_train_embedded = my_Isomap.fit_transform(X=X_train)
-        if embed_test_data:
-            X_test_embedded = my_Isomap.transform_outOfSample(X_test=X_test)
-    elif method == "kernel_Isomap":
-        my_kernel_Isomap = My_kernel_Isomap()
-        X_train_embedded = my_kernel_Isomap.fit_transform(X=X_train)
+    if embed_again:
+        X_test_embedded = None
+        if method == "MDS":
+            my_classical_MDS = My_classical_MDS()
+            X_train_embedded = my_classical_MDS.fit_transform(X=X_train)
+            if embed_test_data:
+                X_test_embedded = my_classical_MDS.transform_outOfSample(X_test=X_test)
+        elif method == "kernel_MDS":
+            my_classical_MDS = My_classical_MDS(kernel=kernel)
+            X_train_embedded = my_classical_MDS.fit_transform(X=X_train)
+        elif method == "PCA":
+            pca = PCA(n_components=2)
+            X_train_embedded = pca.fit_transform(X=X_train.T)
+            X_train_embedded = X_train_embedded.T
+        elif method == "my_Sammon_mapping":
+            my_Sammon_mapping = My_Sammon_mapping(X=X_train, n_components=2, n_neighbors=None, 
+                                                max_iterations=100, learning_rate=0.1, init_type="PCA")
+            X_train_embedded = my_Sammon_mapping.fit_transform(X=X_train)
+        elif method == "Sammon_mapping":
+            [X_train_embedded, E] = sammon(x=X_train.T, n=2, maxiter=1000)
+            X_train_embedded = X_train_embedded.T    
+        elif method == "Isomap":
+            my_Isomap = My_Isomap()
+            X_train_embedded = my_Isomap.fit_transform(X=X_train)
+            if embed_test_data:
+                X_test_embedded = my_Isomap.transform_outOfSample(X_test=X_test)
+        elif method == "kernel_Isomap":
+            my_kernel_Isomap = My_kernel_Isomap()
+            X_train_embedded = my_kernel_Isomap.fit_transform(X=X_train)
+        #---- save the embeddings:
+        save_variable(variable=X_train_embedded, name_of_variable="X_train_embedded", path_to_save='./saved_files/'+dataset+"/"+method+"/")
+        save_variable(variable=y_train, name_of_variable="y_train", path_to_save='./saved_files/'+dataset+"/"+method+"/")
+        if X_test_embedded is not None:
+            save_variable(variable=X_test_embedded, name_of_variable="X_test_embedded", path_to_save='./saved_files/'+dataset+"/"+method+"/")
+            save_variable(variable=y_test, name_of_variable="y_test", path_to_save='./saved_files/'+dataset+"/"+method+"/")
+    else:
+        X_train_embedded = load_variable(name_of_variable="X_train_embedded", path='./saved_files/'+dataset+"/"+method+"/")
+        y_train = load_variable(name_of_variable="y_train", path='./saved_files/'+dataset+"/"+method+"/")
+        if os.path.isfile('./saved_files/'+dataset+"/"+method+"/X_test_embedded.pckl"): #--> if the test embedding file exists
+            X_test_embedded = load_variable(name_of_variable="X_test_embedded", path='./saved_files/'+dataset+"/"+method+"/")
+            y_test = load_variable(name_of_variable="y_test", path='./saved_files/'+dataset+"/"+method+"/")
+        else:
+            X_test_embedded = None
 
     #---- plot training embedding:
     plt.scatter(X_train_embedded[0, :], X_train_embedded[1, :], c=y_train, cmap=color_map, edgecolors='k')
@@ -76,7 +92,8 @@ def read_dataset(dataset):
         subset_of_MNIST = True
         pick_subset_of_MNIST_again = True
         MNIST_subset_cardinality_training = 200
-        MNIST_subset_cardinality_testing = 10
+        # MNIST_subset_cardinality_testing = 10
+        MNIST_subset_cardinality_testing = 50
         path_dataset = "./datasets/MNIST/"
         file = open(path_dataset+'X_train.pckl','rb')
         X_train = pickle.load(file); file.close()
@@ -192,6 +209,22 @@ def load_image(address_image, image_height, image_width, do_resize=False, scale=
     img_arr = resize(img_arr, (int(img_arr.shape[0]*scale), int(img_arr.shape[1]*scale)), order=5, preserve_range=True, mode="constant")
     return img_arr
 
+def save_variable(variable, name_of_variable, path_to_save='./'):
+    # https://stackoverflow.com/questions/6568007/how-do-i-save-and-restore-multiple-variables-in-python
+    if not os.path.exists(path_to_save):  # https://stackoverflow.com/questions/273192/how-can-i-create-a-directory-if-it-does-not-exist
+        os.makedirs(path_to_save)
+    file_address = path_to_save + name_of_variable + '.pckl'
+    f = open(file_address, 'wb')
+    pickle.dump(variable, f)
+    f.close()
+
+def load_variable(name_of_variable, path='./'):
+    # https://stackoverflow.com/questions/6568007/how-do-i-save-and-restore-multiple-variables-in-python
+    file_address = path + name_of_variable + '.pckl'
+    f = open(file_address, 'rb')
+    variable = pickle.load(f)
+    f.close()
+    return variable
+
 if __name__ == "__main__":
     main()
-    
